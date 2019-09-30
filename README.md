@@ -53,7 +53,7 @@ bar_chart = charts.bokeh.bar('key', 'val', data_points=5)
 charts = [line_chart, bar_chart]
 
 #create the dashboard object
-d = cux_df.dashboard(charts, title='Custom dashboard', data_size_widget=True)
+d = cux_df.dashboard(charts, title='Custom dashboard 1', data_size_widget=True)
 
 #display the dashboard as a web-app(interactive)
 d.show()
