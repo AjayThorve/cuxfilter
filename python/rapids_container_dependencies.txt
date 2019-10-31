@@ -1,0 +1,9 @@
+nose
+xarray
+geopandas
+jupyter_sphinx
+sphinxcontrib-websupport
+panel
+altair
+bokeh
+pyppeteer
