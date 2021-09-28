@@ -14,7 +14,6 @@ class BaseScatter(BaseNonAggregate):
     reset_event = None
     x_range: Tuple = None
     y_range: Tuple = None
-    aggregate_col = None
     default_palette = CUXF_DEFAULT_COLOR_PALETTE
 
     @property

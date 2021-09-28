@@ -316,7 +316,7 @@ def number(
         documentation for more info
 
     """
-    if not (x or expression):
+    if not (x is not None or expression):
         raise ArgumentError(
             "Atleast one of x or expression arg should be provided"
         )

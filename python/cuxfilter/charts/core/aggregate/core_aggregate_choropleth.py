@@ -17,6 +17,28 @@ class BaseChoropleth(BaseChart):
     _datatile_loaded_state: bool = False
     geo_mapper: Dict[str, str] = {}
     use_data_tiles = True
+    _color_column = None
+    _elevation_column = None
+
+    @property
+    def color_column(self):
+        return self._color_column
+
+    @color_column.setter
+    def color_column(self, value):
+        if type(value) in [int, float]:
+            self.contains_numeric_coordinates = True
+        self._color_column = str(value) if value is not None else None
+
+    @property
+    def elevation_column(self):
+        return self._elevation_column
+
+    @elevation_column.setter
+    def elevation_column(self, value):
+        if type(value) in [int, float]:
+            self.contains_numeric_coordinates = True
+        self._elevation_column = str(value) if value is not None else None
 
     @property
     def datatile_loaded_state(self):

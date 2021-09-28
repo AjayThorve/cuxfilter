@@ -261,10 +261,7 @@ class Scatter(BaseScatter):
         """
         if not self.title:
             self.title = (
-                "Scatter plot for "
-                + self.aggregate_col
-                + " "
-                + self.aggregate_fn
+                f"Scatter plot for {self.aggregate_col} {self.aggregate_fn}"
             )
 
         self.chart = figure(

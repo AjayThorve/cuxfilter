@@ -14,8 +14,8 @@ from ...assets import datetime as dt
 
 class BaseChart:
     chart_type: str = None
-    x: str = None
-    y: str = None
+    _x = None
+    _y = None
     aggregate_fn: str = "count"
     color: str = None
     _height: int = 0
@@ -37,6 +37,27 @@ class BaseChart:
     # widget=False can only be rendered the main layout
     is_widget = False
     title = ""
+    contains_numeric_coordinates = False
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        if type(value) in [int, float]:
+            self.contains_numeric_coordinates = True
+        self._x = str(value) if value is not None else None
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        if type(value) in [int, float]:
+            self.contains_numeric_coordinates = True
+        self._y = str(value) if value is not None else None
 
     @property
     def name(self):

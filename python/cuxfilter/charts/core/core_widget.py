@@ -9,7 +9,7 @@ from ...assets import datetime as dt
 
 class BaseWidget:
     chart_type: str = None
-    x: str = None
+    _x = None
     color: str = None
     height: int = None
     width: int = None
@@ -27,6 +27,16 @@ class BaseWidget:
     _initialized = False
     # widget is a chart type that can be rendered in a sidebar or main layout
     is_widget = True
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        if type(value) in [int, float]:
+            self.contains_numeric_coordinates = True
+        self._x = str(value) if value is not None else None
 
     @property
     def name(self):

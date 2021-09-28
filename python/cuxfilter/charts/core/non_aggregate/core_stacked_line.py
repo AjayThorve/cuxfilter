@@ -190,21 +190,29 @@ class BaseStackedLine(BaseChart):
                 self.source = dashboard_cls._cuxfilter_df.data
 
             self.x_range = (xmin, xmax)
+            if self.contains_numeric_coordinates:
+                self.selected_indices = cudf.logical_and(
+                    xmin <= self.source[self.x], self.source[self.x] <= xmax
+                )
+                temp_data = dashboard_cls._query(
+                    dashboard_cls._generate_query_str(),
+                    local_indices=self.selected_indices,
+                )
+            else:
+                query = f"@{self.x}_min<={self.x}<=@{self.x}_max"
+                temp_str_dict = {
+                    **dashboard_cls._query_str_dict,
+                    **{self.name: query},
+                }
+                temp_local_dict = {
+                    **dashboard_cls._query_local_variables_dict,
+                    **{self.x + "_min": xmin, self.x + "_max": xmax},
+                }
 
-            query = f"@{self.x}_min<={self.x}<=@{self.x}_max"
-            temp_str_dict = {
-                **dashboard_cls._query_str_dict,
-                **{self.name: query},
-            }
-            temp_local_dict = {
-                **dashboard_cls._query_local_variables_dict,
-                **{self.x + "_min": xmin, self.x + "_max": xmax},
-            }
-
-            temp_data = dashboard_cls._query(
-                dashboard_cls._generate_query_str(temp_str_dict),
-                temp_local_dict,
-            )
+                temp_data = dashboard_cls._query(
+                    dashboard_cls._generate_query_str(temp_str_dict),
+                    temp_local_dict,
+                )
             # reload all charts with new queried data (cudf.DataFrame only)
             dashboard_cls._reload_charts(
                 data=temp_data, ignore_cols=[self.name]

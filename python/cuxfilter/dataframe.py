@@ -25,6 +25,12 @@ class DataFrame:
     is_graph = False
     edges: Type[cudf.DataFrame] = None
 
+    def _format_columns(self, columns):
+        for i, col in enumerate(columns):
+            if not isinstance(col, str):
+                columns[i] = str(col)
+        return columns
+
     @classmethod
     def from_arrow(cls, dataframe_location):
         """
@@ -153,6 +159,7 @@ class DataFrame:
 
     def __init__(self, data):
         self.data = data
+        self.data.columns = self._format_columns(list(self.data.columns))
 
     def dashboard(
         self,

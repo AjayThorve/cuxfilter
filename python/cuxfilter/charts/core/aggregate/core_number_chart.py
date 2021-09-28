@@ -14,11 +14,11 @@ class BaseNumberChart(BaseChart):
 
     @property
     def is_datasize_indicator(self):
-        return not (self.x or self.expression)
+        return not (self.x is not None or self.expression)
 
     @property
     def name(self):
-        value = (self.x or self.expression) or ""
+        value = (self.x is not None or self.expression) or ""
         return f"{value}_{self.chart_type}_{self.title}"
 
     def __init__(
@@ -46,7 +46,7 @@ class BaseNumberChart(BaseChart):
         """
         self.x = x
         self.expression = expression
-        self.title = title if title else (x or expression)
+        self.title = title if title else (self.x or expression)
         self.aggregate_fn = aggregate_fn
         self.format = format
         self.colors = colors
@@ -73,10 +73,10 @@ class BaseNumberChart(BaseChart):
             self.min_value = 0
             self.max_value = len(dashboard_cls._cuxfilter_df.data)
         elif self.x:
-            self.expression = f"data.{self.x}"
+            self.expression = f'data["{self.x}"]'
         elif self.expression:
             for i in dashboard_cls._cuxfilter_df.data.columns:
-                self.expression = self.expression.replace(i, f"data.{i}")
+                self.expression = self.expression.replace(i, f'data["{i}"]')
 
         self.calculate_source(dashboard_cls._cuxfilter_df.data)
         self.generate_chart()

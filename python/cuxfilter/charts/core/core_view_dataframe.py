@@ -38,6 +38,12 @@ class ViewDataFrame:
     # widget=False can only be rendered the main layout
     is_widget = False
 
+    def _format_columns(self, columns):
+        for i, col in enumerate(columns):
+            if not isinstance(col, str):
+                columns[i] = str(col)
+        return columns
+
     def __init__(
         self,
         columns=None,
@@ -46,7 +52,7 @@ class ViewDataFrame:
         height=400,
         force_computation=False,
     ):
-        self.columns = columns
+        self.columns = self._format_columns(columns)
         self._width = width
         self._height = height
         self.drop_duplicates = drop_duplicates

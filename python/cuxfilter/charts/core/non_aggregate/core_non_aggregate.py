@@ -22,8 +22,18 @@ class BaseNonAggregate(BaseChart):
     x_range: Tuple = None
     y_range: Tuple = None
     selected_indices: cudf.Series = None
-    aggregate_col = None
+    _aggregate_col = None
     use_data_tiles = False
+
+    @property
+    def aggregate_col(self):
+        return self._aggregate_col
+
+    @aggregate_col.setter
+    def aggregate_col(self, value):
+        if type(value) in [int, float]:
+            self.contains_numeric_coordinates = True
+        self._aggregate_col = str(value) if value is not None else None
 
     @property
     def name(self):
@@ -128,28 +138,41 @@ class BaseNonAggregate(BaseChart):
             # set lasso selected indices to None
             self.selected_indices = None
 
-            query = (
-                f"@{self.x}_min<={self.x}<=@{self.x}_max"
-                + f" and @{self.y}_min<={self.y}<=@{self.y}_max"
-            )
-            temp_str_dict = {
-                **dashboard_cls._query_str_dict,
-                **{self.name: query},
-            }
-            temp_local_dict = {
-                **dashboard_cls._query_local_variables_dict,
-                **{
-                    self.x + "_min": xmin,
-                    self.x + "_max": xmax,
-                    self.y + "_min": ymin,
-                    self.y + "_max": ymax,
-                },
-            }
+            if self.contains_numeric_coordinates:
+                lhs = cudf.logical_and(
+                    xmin <= self.source[self.x], self.source[self.x] <= xmax
+                )
+                rhs = cudf.logical_and(
+                    ymin <= self.source[self.y], self.source[self.y] <= ymax
+                )
+                self.selected_indices = cudf.logical_and(lhs, rhs)
+                temp_data = dashboard_cls._query(
+                    dashboard_cls._generate_query_str(),
+                    local_indices=self.selected_indices,
+                )
+            else:
+                query = (
+                    f"@{self.x}_min<={self.x}<=@{self.x}_max"
+                    + f" and @{self.y}_min<={self.y}<=@{self.y}_max"
+                )
 
-            temp_data = dashboard_cls._query(
-                dashboard_cls._generate_query_str(temp_str_dict),
-                temp_local_dict,
-            )
+                temp_str_dict = {
+                    **dashboard_cls._query_str_dict,
+                    **{self.name: query},
+                }
+                temp_local_dict = {
+                    **dashboard_cls._query_local_variables_dict,
+                    **{
+                        self.x + "_min": xmin,
+                        self.x + "_max": xmax,
+                        self.y + "_min": ymin,
+                        self.y + "_max": ymax,
+                    },
+                }
+                temp_data = dashboard_cls._query(
+                    dashboard_cls._generate_query_str(temp_str_dict),
+                    temp_local_dict,
+                )
 
             # reload all charts with new queried data (cudf.DataFrame only)
             dashboard_cls._reload_charts(
@@ -259,6 +282,7 @@ class BaseNonAggregate(BaseChart):
             self.y_range = None
             self.selected_indices = None
             dashboard_cls._query_str_dict.pop(self.name, None)
+            print("called reset event")
             dashboard_cls._reload_charts()
 
         # add callback to reset chart button
