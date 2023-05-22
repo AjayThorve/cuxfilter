@@ -20,7 +20,7 @@ class BaseAggregateChart(BaseChart):
     filter_widget = None
     x_axis_tick_formatter = None
     y_axis_tick_formatter = None
-    use_data_tiles = True
+    # use_data_tiles = True
     custom_binning = False
     datatile_active_color = DATATILE_ACTIVE_COLOR
     stride = None
@@ -30,6 +30,10 @@ class BaseAggregateChart(BaseChart):
     @property
     def datatile_loaded_state(self):
         return self._datatile_loaded_state
+
+    @property
+    def use_data_tiles(self):
+        return False
 
     @property
     def name(self):
@@ -74,8 +78,8 @@ class BaseAggregateChart(BaseChart):
         convert it back to datetime is using datetime64[ms]
         """
         if self.x_dtype in CUDF_DATETIME_TYPES:
-            return self.source.data[property].astype("datetime64[ms]")
-        return self.source.data[property]
+            return self.source[property].astype("datetime64[ms]")
+        return self.source[property]
 
     def __init__(
         self,
@@ -208,11 +212,11 @@ class BaseAggregateChart(BaseChart):
 
         self.calculate_source(dashboard_cls._cuxfilter_df.data)
         self.generate_chart()
-        self.apply_mappers()
+        # self.apply_mappers()
 
         if self.add_interaction and self.x_dtype != "object":
             self.add_range_slider_filter(dashboard_cls)
-        self.add_events(dashboard_cls)
+        # self.add_events(dashboard_cls)
 
     def view(self):
         return chart_view(
@@ -232,13 +236,20 @@ class BaseAggregateChart(BaseChart):
         """
         if self.y == self.x or self.y is None:
             # it's a histogram
-            df, self.data_points = calc_value_counts(
+            df = calc_value_counts(
                 data[self.x],
                 self.stride,
                 self.min_value,
                 self.data_points,
                 self.custom_binning,
             )
+            df.columns = [self.x, "count"]
+        else:
+            self.aggregate_fn = self.aggregate_fn or "mean"
+            df = calc_groupby(self, data)
+
+        if self.data_points is None:
+            self.data_points = df.shape[0]
             if self.data_points > 50_000:
                 print(
                     "number of x-values for a bar chart ",
@@ -247,48 +258,49 @@ class BaseAggregateChart(BaseChart):
                     "to use custom data_points parameter to ",
                     "enforce custom binning for smooth crossfiltering",
                 )
-        else:
-            self.aggregate_fn = "mean"
-            df = calc_groupby(self, data).to_pandas().to_numpy().transpose()
-            if self.data_points is None:
-                self.data_points = len(df[0])
 
         if self.stride is None and self.x_dtype != "object":
             self.compute_stride()
 
-        if self.custom_binning:
-            if len(self.x_label_map) == 0:
-                temp_mapper_index = np.array(df[0])
-                temp_mapper_value = np.round(
-                    (temp_mapper_index * self.stride) + self.min_value,
-                    4,
-                ).astype("str")
-                temp_mapper_index = temp_mapper_index.astype("str")
-                self.x_label_map = dict(
-                    zip(temp_mapper_index, temp_mapper_value)
-                )
-        dict_temp = {
-            "X": df[0],
-            "Y": df[1],
-        }
+        # if self.custom_binning:
+        #     if len(self.x_label_map) == 0:
+        #         temp_mapper_index = (
+        #             np.array(df[0])
+        #             if isinstance(df, tuple)
+        #             else df[self.x].values_host
+        #         )
+        #         temp_mapper_value = np.round(
+        #             (temp_mapper_index * self.stride) + self.min_value,
+        #             4,
+        #         ).astype("str")
+        #         temp_mapper_index = temp_mapper_index.astype("str")
+        #         self.x_label_map = dict(
+        #             zip(temp_mapper_index, temp_mapper_value)
+        #         )
+        print(df)
+        self.source = df
+        # dict_temp = {
+        #     "X": df[0],
+        #     "Y": df[1],
+        # }
 
-        if patch_update and len(dict_temp["X"]) < len(
-            self._transformed_source_data(self.data_x_axis)
-        ):
-            # if not all X axis bins are provided, filling bins not updated
-            # with zeros
-            y_axis_data = self._compute_array_all_bins(
-                self._transformed_source_data(self.data_x_axis),
-                dict_temp["X"],
-                dict_temp["Y"],
-            )
+        # if patch_update and len(dict_temp["X"]) < len(
+        #     self._transformed_source_data(self.x)
+        # ):
+        #     # if not all X axis bins are provided, filling bins not updated
+        #     # with zeros
+        #     y_axis_data = self._compute_array_all_bins(
+        #         self._transformed_source_data(self.x),
+        #         dict_temp["X"],
+        #         dict_temp["Y"],
+        #     )
 
-            dict_temp = {
-                "X": self._transformed_source_data(self.data_x_axis),
-                "Y": y_axis_data,
-            }
+        #     dict_temp = {
+        #         "X": self._transformed_source_data(self.x),
+        #         "Y": y_axis_data,
+        #     }
 
-        self.format_source_data(dict_temp, patch_update)
+        # self.format_source_data(dict_temp, patch_update)
 
     def add_range_slider_filter(self, dashboard_cls):
         """
@@ -395,19 +407,19 @@ class BaseAggregateChart(BaseChart):
         # add callback to reset chart button
         self.chart.on_event(self.reset_event, reset_callback)
 
-    def query_chart_by_range(self, active_chart, query_tuple, datatile):
+    def _query_by_range_datatile(self, active_chart, query_tuple, datatile):
         """
         Description:
 
-        -------------------------------------------
-        Input:
-            1. active_chart: chart object of active_chart
-            2. query_tuple: (min_val, max_val) of the query [type: tuple]
-            3. datatile: datatile of active chart for
-                            current chart[type: pandas df]
-        -------------------------------------------
+            -------------------------------------------
+            Input:
+                1. active_chart: chart object of active_chart
+                2. query_tuple: (min_val, max_val) of the query [type: tuple]
+                3. datatile: datatile of active chart for
+                                current chart[type: pandas df]
+            -------------------------------------------
 
-        Ouput:
+            Ouput:
         """
         min_val, max_val = query_tuple
         datatile_index_min = int(
@@ -416,26 +428,22 @@ class BaseAggregateChart(BaseChart):
         datatile_index_max = int(
             round((max_val - active_chart.min_value) / active_chart.stride)
         )
+
         if self.custom_binning:
-            datatile_indices = self._transformed_source_data(self.data_x_axis)
+            datatile_indices = self._transformed_source_data(self.x)
         else:
             datatile_indices = (
-                (
-                    self._transformed_source_data(self.data_x_axis)
-                    - self.min_value
-                )
+                (self._transformed_source_data(self.x) - self.min_value)
                 / self.stride
             ).astype(int)
 
+        datatile_result = None
         if datatile_index_min == 0:
             if self.aggregate_fn == "mean":
-                datatile_result_sum = np.array(
+                datatile_result = (
                     datatile[0].loc[datatile_indices, datatile_index_max]
+                    / datatile[1].loc[datatile_indices, datatile_index_max]
                 )
-                datatile_result_count = np.array(
-                    datatile[1].loc[datatile_indices, datatile_index_max]
-                )
-                datatile_result = datatile_result_sum / datatile_result_count
             elif self.aggregate_fn in ["count", "sum", "min", "max"]:
                 datatile_result = datatile.loc[
                     datatile_indices, datatile_index_max
@@ -500,13 +508,10 @@ class BaseAggregateChart(BaseChart):
         Ouput:
         """
         if self.custom_binning:
-            datatile_indices = self._transformed_source_data(self.data_x_axis)
+            datatile_indices = self._transformed_source_data(self.x)
         else:
             datatile_indices = (
-                (
-                    self._transformed_source_data(self.data_x_axis)
-                    - self.min_value
-                )
+                (self._transformed_source_data(self.x) - self.min_value)
                 / self.stride
             ).astype(int)
         if len(new_indices) == 0 or new_indices == [""]:
@@ -555,13 +560,10 @@ class BaseAggregateChart(BaseChart):
         Ouput:
         """
         if self.custom_binning:
-            datatile_indices = self._transformed_source_data(self.data_x_axis)
+            datatile_indices = self._transformed_source_data(self.x)
         else:
             datatile_indices = (
-                (
-                    self._transformed_source_data(self.data_x_axis)
-                    - self.min_value
-                )
+                (self._transformed_source_data(self.x) - self.min_value)
                 / self.stride
             ).astype(int)
         if len(new_indices) == 0 or new_indices == [""]:
@@ -614,13 +616,10 @@ class BaseAggregateChart(BaseChart):
         Ouput:
         """
         if self.custom_binning:
-            datatile_indices = self._transformed_source_data(self.data_x_axis)
+            datatile_indices = self._transformed_source_data(self.x)
         else:
             datatile_indices = (
-                (
-                    self._transformed_source_data(self.data_x_axis)
-                    - self.min_value
-                )
+                (self._transformed_source_data(self.x) - self.min_value)
                 / self.stride
             ).astype(int)
 

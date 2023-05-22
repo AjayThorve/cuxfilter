@@ -4,6 +4,7 @@ import numpy as np
 from bokeh import events
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
+import holoviews as hv
 
 
 class Bar(BaseAggregateChart):
@@ -12,104 +13,13 @@ class Bar(BaseAggregateChart):
     """
 
     reset_event = events.Reset
-    data_y_axis = "top"
-    data_x_axis = "x"
-
-    def format_source_data(self, source_dict, patch_update=False):
-        """
-        format source
-
-        Parameters:
-        -----------
-        source_dict: {'X': [], 'Y': []}
-        """
-        if patch_update is False:
-            self.source = ColumnDataSource(
-                {
-                    self.data_x_axis: np.array(source_dict["X"]),
-                    self.data_y_axis: np.array(source_dict["Y"]),
-                }
-            )
-            self.source_backup = self.source.to_df()
-        else:
-            if self.renderer_mode == "notebook":
-                self.reset_chart(np.array(source_dict["Y"]))
-            else:
-                """
-                Updating chart source may not work in some environments
-                as expected, throwing a "_pending_writes should be a
-                non-None when we have a document lock" error, for example
-                in a web-app environment. For such cases, we add a
-                next_tick_callback to patch source dataset on the next render.
-                """
-
-                def cb():
-                    self.reset_chart(np.array(source_dict["Y"]))
-
-                (
-                    self.chart.document
-                    and self.chart.document.add_next_tick_callback(cb)
-                )
-
-    def get_source_y_axis(self):
-        """
-        get y axis column value
-        """
-        if self.source is not None:
-            return self.source.data[self.data_y_axis]
-        return self.source
 
     def generate_chart(self):
         """
         generate chart
         """
-        self.chart = figure(
-            x_range=(
-                self.source.data[self.data_x_axis]
-                if self.x_dtype == "object"
-                else None
-            ),
-            tools="pan, wheel_zoom, reset, save",
-            active_scroll="wheel_zoom",
-            active_drag="pan",
-        )
-        if self.color is None:
-            self.sub_chart = self.chart.vbar(
-                x=self.data_x_axis,
-                top=self.data_y_axis,
-                width=0.9,
-                source=self.source,
-                **self.library_specific_params,
-            )
-        else:
-            self.sub_chart = self.chart.vbar(
-                x=self.data_x_axis,
-                top=self.data_y_axis,
-                width=0.9,
-                source=self.source,
-                color=self.color,
-                **self.library_specific_params,
-            )
-        if self.x_axis_tick_formatter:
-            self.chart.xaxis.formatter = self.x_axis_tick_formatter
-        if self.y_axis_tick_formatter:
-            self.chart.yaxis.formatter = self.y_axis_tick_formatter
-        if self.autoscaling is False:
-            self.chart.y_range.end = self.source.data[self.data_y_axis].max()
-
-        if self.y != self.x:
-            self.chart.yaxis.axis_label = self.y
-        else:
-            self.chart.yaxis.axis_label = self.aggregate_fn
-
-    def update_dimensions(self, width=None, height=None):
-        """
-        update dimensions
-        """
-        if width is not None:
-            self.chart.plot_width = width
-        if height is not None:
-            self.chart.plot_height = height
+        self.chart = hv.Bars(self.source, kdims=self.x, vdims=self.y)
+        self.chart = self.chart.opts(width=self.width)
 
     def apply_mappers(self):
         """
@@ -126,31 +36,13 @@ class Bar(BaseAggregateChart):
         """
         self.calculate_source(data, patch_update=patch_update)
 
-    def reset_chart(self, data: np.array = np.array([])):
-        """
-        if len(data) is 0, reset the chart using self.source_backup
-
-        Parmeters:
-        ----------
-        data = list() --> update self.data_y_axis in self.source
-        """
-        if data.size == 0:
-            data = self.source_backup[self.data_y_axis]
-
-        # verifying length is same as x axis
-        x_axis_len = self.source.data[self.data_x_axis].size
-        data = data[:x_axis_len]
-
-        patch_dict = {self.data_y_axis: [(slice(data.size), data)]}
-        self.source.patch(patch_dict)
-
     def apply_theme(self, theme):
         """
         apply thematic changes to the chart based on the theme
         """
-        if self.color is None:
-            self.sub_chart.glyph.fill_color = theme.chart_color
-            self.sub_chart.glyph.line_color = theme.chart_color
+        # if self.color is None:
+        #     self.sub_chart.glyph.fill_color = theme.chart_color
+        #     self.sub_chart.glyph.line_color = theme.chart_color
 
         # interactive slider
         self.datatile_active_color = theme.datatile_active_color
@@ -268,6 +160,7 @@ class Line(BaseAggregateChart):
         """
         reload chart
         """
+        print(data)
         self.calculate_source(data, patch_update=patch_update)
 
     def reset_chart(self, data: np.array = np.array([])):

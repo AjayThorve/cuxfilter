@@ -6,7 +6,6 @@ import dask.dataframe as dd
 from .utils import point_in_polygon
 from ..core_chart import BaseChart
 from ....layouts import chart_view
-from ....assets import cudf_utils
 
 
 class BaseNonAggregate(BaseChart):
@@ -253,6 +252,7 @@ class BaseNonAggregate(BaseChart):
 
         Ouput:
         """
+
         # def reset_callback():
         def reset_callback(resetting):
             if dashboard_cls._active_view != self:
@@ -267,48 +267,6 @@ class BaseNonAggregate(BaseChart):
 
         # add callback to reset chart button
         self.chart.add_reset_event(reset_callback)
-
-    def _compute_source(self, query, local_dict, indices):
-        return cudf_utils.query_df(self.source, query, local_dict, indices)
-
-    def query_chart_by_range(
-        self,
-        active_chart: BaseChart,
-        query_tuple,
-        datatile=None,
-        query="",
-        local_dict={},
-        indices=None,
-    ):
-        """
-        Description:
-
-        -------------------------------------------
-        Input:
-            1. active_chart: chart object of active_chart
-            2. query_tuple: (min_val, max_val) of the query [type: tuple]
-            3. datatile: None in case of Gpu Geo Scatter charts
-            4. query: query string representing the current filtered state of
-                    the dashboard
-            5. local_dict: dictionary containing the variable:value mapping
-                    local to the query_string.
-                    Passed as a parameter to cudf.query() api
-            6. indices: cudf.Series representing the current filtered state
-                    of the dashboard, apart from the query_string,
-                    since the lasso_select callback results in a boolean mask
-        -------------------------------------------
-
-        Ouput:
-        """
-        min_val, max_val = query_tuple
-        final_query = "@min_val<=" + active_chart.x + "<=@max_val"
-        local_dict.update({"min_val": min_val, "max_val": max_val})
-        if len(query) > 0:
-            final_query += " and " + query
-        self.reload_chart(
-            self._compute_source(final_query, local_dict, indices),
-            False,
-        )
 
     def query_chart_by_indices(
         self,

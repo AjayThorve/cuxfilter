@@ -41,10 +41,7 @@ def calc_value_counts(
                 .sort_index()
             )
 
-    return (
-        (val_count.index.values_host, val_count.values_host),
-        len(val_count),
-    )
+    return val_count.reset_index()
 
 
 def calc_groupby(chart: Type[BaseChart], data, agg=None):
@@ -88,7 +85,6 @@ def calc_groupby(chart: Type[BaseChart], data, agg=None):
                     )
                 del groupby_res_temp
                 gc.collect()
-            groupby_res = groupby_res
         else:
             groupby_res = temp_df.groupby(
                 by=[chart.x], sort=True, as_index=False
