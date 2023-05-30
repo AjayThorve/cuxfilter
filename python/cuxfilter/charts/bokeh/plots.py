@@ -1,11 +1,13 @@
 from ..core.aggregate import BaseAggregateChart
 
+import param
 import numpy as np
 from bokeh import events
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 import holoviews as hv
-
+import cudf
+import dask_cudf
 
 class Bar(BaseAggregateChart):
     """
@@ -13,13 +15,18 @@ class Bar(BaseAggregateChart):
     """
 
     reset_event = events.Reset
+    source = param.ClassSelector(
+        class_=(cudf.DataFrame, dask_cudf.DataFrame),
+        doc="source cuDF/dask_cuDF dataframe",
+    )
 
+
+    @param.depends("source")
     def generate_chart(self):
         """
         generate chart
         """
-        self.chart = hv.Bars(self.source, kdims=self.x, vdims=self.y)
-        self.chart = self.chart.opts(width=self.width)
+        return hv.Bars(self.calculate_source(), kdims=self.x, vdims=self.y).opts(width=self.width)
 
     def apply_mappers(self):
         """
@@ -30,11 +37,11 @@ class Bar(BaseAggregateChart):
         if self.y_label_map is not None:
             self.chart.yaxis.major_label_overrides = self.y_label_map
 
-    def reload_chart(self, data, patch_update=True):
+    def reload_chart(self, data):
         """
         reload chart
         """
-        self.calculate_source(data, patch_update=patch_update)
+        self.calculate_source(data)
 
     def apply_theme(self, theme):
         """

@@ -279,18 +279,15 @@ class BaseChart:
 
         Ouput:
         """
-        if datatile is not None:
-            self._query_by_range_datatile(active_chart, query_tuple, datatile)
-        else:
-            min_val, max_val = query_tuple
-            final_query = "@min_val<=" + active_chart.x + "<=@max_val"
-            local_dict.update({"min_val": min_val, "max_val": max_val})
-            if len(query) > 0:
-                final_query += " and " + query
-            self.reload_chart(
-                self._compute_source(final_query, local_dict, indices),
-                False,
-            )
+        min_val, max_val = query_tuple
+        final_query = "@min_val<=" + active_chart.x + "<=@max_val"
+        local_dict.update({"min_val": min_val, "max_val": max_val})
+        if len(query) > 0:
+            final_query += " and " + query
+        self.reload_chart(
+            self._compute_source(final_query, local_dict, indices),
+            False,
+        )
 
     def _compute_source(self, query, local_dict, indices):
         return cudf_utils.query_df(self.source, query, local_dict, indices)

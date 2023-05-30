@@ -1,6 +1,7 @@
 import panel as pn
 import numpy as np
 from bokeh.models import DatetimeTickFormatter
+import holoviews as hv
 
 from ..core_chart import BaseChart
 from ....assets.numba_kernels import calc_groupby, calc_value_counts
@@ -210,12 +211,12 @@ class BaseAggregateChart(BaseChart):
             else:
                 self.use_data_tiles = False
 
-        self.calculate_source(dashboard_cls._cuxfilter_df.data)
-        self.generate_chart()
+        self.source = dashboard_cls._cuxfilter_df.data
+        self.chart = hv.DynamicMap(self.generate_chart)
         # self.apply_mappers()
 
-        if self.add_interaction and self.x_dtype != "object":
-            self.add_range_slider_filter(dashboard_cls)
+        # if self.add_interaction and self.x_dtype != "object":
+        #     self.add_range_slider_filter(dashboard_cls)
         # self.add_events(dashboard_cls)
 
     def view(self):
@@ -223,7 +224,7 @@ class BaseAggregateChart(BaseChart):
             self.chart, self.filter_widget, width=self.width, title=self.title
         )
 
-    def calculate_source(self, data, patch_update=False):
+    def calculate_source(self):
         """
         Description:
 
@@ -234,10 +235,11 @@ class BaseAggregateChart(BaseChart):
 
         Ouput:
         """
+        print("calculate source")
         if self.y == self.x or self.y is None:
             # it's a histogram
             df = calc_value_counts(
-                data[self.x],
+                self.source[self.x],
                 self.stride,
                 self.min_value,
                 self.data_points,
@@ -246,7 +248,7 @@ class BaseAggregateChart(BaseChart):
             df.columns = [self.x, "count"]
         else:
             self.aggregate_fn = self.aggregate_fn or "mean"
-            df = calc_groupby(self, data)
+            df = calc_groupby(self, self.source)
 
         if self.data_points is None:
             self.data_points = df.shape[0]
@@ -258,9 +260,8 @@ class BaseAggregateChart(BaseChart):
                     "to use custom data_points parameter to ",
                     "enforce custom binning for smooth crossfiltering",
                 )
+        return df
 
-        if self.stride is None and self.x_dtype != "object":
-            self.compute_stride()
 
         # if self.custom_binning:
         #     if len(self.x_label_map) == 0:
@@ -277,8 +278,6 @@ class BaseAggregateChart(BaseChart):
         #         self.x_label_map = dict(
         #             zip(temp_mapper_index, temp_mapper_value)
         #         )
-        print(df)
-        self.source = df
         # dict_temp = {
         #     "X": df[0],
         #     "Y": df[1],

@@ -117,7 +117,6 @@ class dynspread(SpreadingOperation):
             shape=self.p.shape,
         )
 
-
 class InteractiveDatashaderBase(param.Parameterized):
     width = param.Integer(400)
     height = param.Integer(400)
