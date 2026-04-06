@@ -20,7 +20,7 @@ When you detect `import cuxfilter` or `cux_df` in the user's code:
 | `cuxfilter.charts.bokeh.bar()` | `hvplot.bar()` (Panel) or `px.bar` in `dcc.Graph` (Dash) |
 | `cuxfilter.charts.datashader.scatter()` | `hd.datashade(hv.Points(gdf, kdims=['x','y']))` (Panel) |
 | `cuxfilter.charts.datashader.line()` | `hd.datashade(hv.Curve(gdf, kdims=['x'], vdims=['y']))` (Panel) |
-| `cuxfilter.charts.datashader.heatmap()` | `hd.datashade(hv.Points(gdf), aggregator=ds.mean('value'))` (Panel) |
+| `cuxfilter.charts.datashader.heatmap()` | `hd.datashade(hv.Points(gdf, kdims=['x','y']), aggregator=ds.count())` (Panel) — use `ds.mean('col')` for value-weighted heatmaps |
 | `cuxfilter.charts.panel_widgets.range_slider()` | `pn.widgets.RangeSlider` (Panel) or `dcc.RangeSlider` (Dash) |
 | `cuxfilter.charts.panel_widgets.drop_down()` | `pn.widgets.Select` (Panel) or `dcc.Dropdown` (Dash) |
 | `cuxfilter.charts.panel_widgets.multi_select()` | `pn.widgets.MultiSelect` (Panel) or `dcc.Dropdown(multi=True)` (Dash) |
@@ -41,8 +41,9 @@ cuxfilter wired cross-filtering callbacks automatically when charts shared the s
 
 ## What Not to Port
 
-`cuxfilter.charts.deckgl.*` (choropleth 2D and 3D) has no direct drop-in replacement in Panel or Dash. Recommend:
+`cuxfilter.charts.deckgl.*` (choropleth 2D and 3D) has no direct drop-in replacement in Panel, Dash, or Streamlit via DataShader. Recommend:
 - `pydeck` for standalone Deck.GL rendering
 - `dash-deck` for Deck.GL inside a Dash app
+- `st.pydeck_chart()` for Deck.GL inside a Streamlit app
 
-Do not attempt to replicate Deck.GL charts using the Panel or Dash DataShader patterns — they are fundamentally different rendering pipelines.
+Do not attempt to replicate Deck.GL charts using DataShader patterns — they are fundamentally different rendering pipelines.
