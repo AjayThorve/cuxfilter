@@ -7,7 +7,7 @@ Best when users need rich interactive chart types (3D, maps, financial) or are d
 ## Key Imports and Setup
 
 ```python
-import cudf
+import cudf  # pandas not imported — cuDF handles all data; only .to_pandas() at render time
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
 

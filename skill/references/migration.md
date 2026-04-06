@@ -14,10 +14,12 @@ When you detect `import cuxfilter` or `cux_df` in the user's code:
 | cuxfilter construct | Modern equivalent |
 |---|---|
 | `import cuxfilter` | `import cudf` + viz library of choice |
+| `cuxfilter.DataFrame` | `cudf.DataFrame` |
 | `cuxfilter.DataFrame.from_dataframe(df)` | `df` is already a cuDF DataFrame — use it directly |
 | `cuxfilter.DataFrame.from_arrow(table)` | `cudf.DataFrame.from_arrow(table)` |
 | `cuxfilter.load_graph(nodes, edges)` | `cudf.read_csv()` for each, then use `cugraph` or `networkx` |
 | `cuxfilter.charts.bokeh.bar()` | `hvplot.bar()` (Panel) or `px.bar` in `dcc.Graph` (Dash) |
+| `cuxfilter.charts.bokeh.scatter()` | `hvplot.scatter()` (Panel) or `px.scatter` in `dcc.Graph` (Dash) |
 | `cuxfilter.charts.datashader.scatter()` | `hd.datashade(hv.Points(gdf, kdims=['x','y']))` (Panel) |
 | `cuxfilter.charts.datashader.line()` | `hd.datashade(hv.Curve(gdf, kdims=['x'], vdims=['y']))` (Panel) |
 | `cuxfilter.charts.datashader.heatmap()` | `hd.datashade(hv.Points(gdf, kdims=['x','y']), aggregator=ds.count())` (Panel) — use `ds.mean('col')` for value-weighted heatmaps |

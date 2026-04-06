@@ -57,4 +57,4 @@ Produce a complete, runnable file containing:
 After delivering the generated file, suggest:
 - Add more chart types
 - Connect to a live or streaming data source
-- Deploy to a server (`panel serve app.py`, `gunicorn app:server`, `streamlit run app.py`)
+- Deploy to a server (`panel serve app.py` for Panel, `gunicorn app:server` for Dash — Dash exposes a Flask `server` object, `streamlit run app.py` for Streamlit)
