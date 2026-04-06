@@ -4,6 +4,8 @@ description: Generate GPU-accelerated cross-filtering dashboards using cuDF. Use
 triggers:
   - cross-filtering dashboard
   - interactive filter on my dataset
+  - interactive filter on a large dataset
+  - linked charts
   - linked charts on my data
   - GPU dashboard
   - /cuXfilter
