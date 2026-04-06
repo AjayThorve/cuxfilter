@@ -25,7 +25,7 @@ def load_data():
 gdf = load_data()
 
 # FILTER COLUMNS: change 'value' to the column you want to filter on
-col = st.selectbox("Filter column", list(gdf.columns))
+col = st.selectbox("Filter column", gdf.columns.to_arrow().to_pylist())
 col_min = float(gdf[col].min())
 col_max = float(gdf[col].max())
 selected_range = st.slider(
@@ -55,8 +55,8 @@ st.caption(f"Showing {len(filtered):,} of {len(gdf):,} rows")
 ## Known GPU Gotchas
 
 - Use `st.cache_resource` (not `st.cache_data`) for cuDF DataFrames. `cache_data` tries to serialize the return value, which fails for cuDF objects.
-- `list(gdf.columns)` is the correct way to get column names as Python strings for Streamlit widgets. `gdf.columns.to_pandas()` does not exist on cuDF Index objects.
+- `gdf.columns.to_arrow().to_pylist()` is the correct way to get column names as guaranteed Python strings. `list(gdf.columns)` returns cuDF Index elements (not `str`), which may cause silent type mismatches. `gdf.columns.to_pandas()` does not exist on cuDF Index objects.
 - Keep all filtering vectorized in cuDF — never iterate over rows with a Python loop. Streamlit reruns mean every slider movement re-executes the filter.
 - Do not call `.to_pandas()` on a large DataFrame before filtering — always filter in cuDF first, then convert the smaller result.
 - `st.dataframe()` and `st.table()` do not accept cuDF — always `.to_pandas()` before passing to these functions.
-- Streamlit has no built-in cross-chart selection. For chart-to-chart filtering, use `st.plotly_chart(on_select="rerun")` (Streamlit >= 1.33) and read `st.session_state` for the selection, or use `st.session_state` with widget keys to carry selections across widget groups.
+- Streamlit has no built-in cross-chart selection. Two approaches: (1) `selection = st.plotly_chart(fig, on_select="rerun")` (Streamlit >= 1.33) — the return value is a dict with a `"selection"` key containing the selected points; (2) use `st.session_state` with widget keys to carry a selection value across widget groups in the same rerun.
