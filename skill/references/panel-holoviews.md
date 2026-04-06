@@ -1,6 +1,8 @@
 # Panel + HoloViews/DataShader Reference
 
-**When to use:** Best for 10M+ rows — DataShader renders server-side so only pixel data crosses the network.
+## When to use
+
+Best for 10M+ rows — DataShader renders server-side so only pixel data crosses the network.
 
 ## Key Imports and Setup
 
